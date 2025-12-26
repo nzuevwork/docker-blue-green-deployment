@@ -1,0 +1,7 @@
+services:
+  app-green:
+    build:
+      context: ./app/v2
+    container_name: app-green
+    networks:
+      - app_net
