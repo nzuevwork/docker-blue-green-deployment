@@ -1,0 +1,43 @@
+name: CD (Blue/Green via SSH)
+
+on:
+  push:
+    branches: [ "main" ]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Deploy over SSH
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          port: ${{ secrets.SSH_PORT }}
+          script: |
+            set -euo pipefail
+
+            # папка на сервере, где лежит репозиторий
+            APP_DIR="${{ secrets.APP_DIR }}"
+            cd "$APP_DIR"
+
+            git fetch --all
+            git reset --hard origin/main
+
+            chmod +x scripts/*.sh
+
+            ./scripts/init.sh
+
+            # деплоим green
+            ./scripts/deploy_green.sh
+
+            # проверяем, что green реально отвечает
+            ./scripts/health_check.sh green
+
+            # переключаем трафик на green
+            ./scripts/switch_traffic.sh green
+
+            echo "DONE: traffic -> green"
