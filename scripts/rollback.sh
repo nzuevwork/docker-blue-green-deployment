@@ -1,6 +1,3 @@
-#!/bin/bash
-set -e
-
-echo "[!] Rolling back traffic"
-
-./switch_traffic.sh blue
+#!/usr/bin/env bash
+set -euo pipefail
+./scripts/switch_traffic.sh blue
