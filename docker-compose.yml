@@ -1,0 +1,36 @@
+cat > docker-compose.yml <<'EOF'
+services:
+  nginx:
+    image: nginx:alpine
+    container_name: nginx-proxy
+    ports:
+      - "80:80"
+    volumes:
+      - ./nginx:/etc/nginx/conf.d:ro
+    depends_on:
+      - app-blue
+      - app-green
+    networks:
+      - app_net
+    restart: unless-stopped
+
+  app-blue:
+    build:
+      context: ./app/v1
+    container_name: app-blue
+    networks:
+      - app_net
+    restart: unless-stopped
+
+  app-green:
+    build:
+      context: ./app/v2
+    container_name: app-green
+    networks:
+      - app_net
+    restart: unless-stopped
+
+networks:
+  app_net:
+    driver: bridge
+EOF
