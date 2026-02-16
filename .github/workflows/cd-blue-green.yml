@@ -1,0 +1,53 @@
+name: CD - Blue Green Deployment
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup SSH
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          ssh-keyscan -H ${{ secrets.SERVER_HOST }} >> ~/.ssh/known_hosts
+
+      - name: Copy project to server
+        run: |
+          rsync -avz --delete ./ ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }}:/opt/blue-green-app/
+
+      - name: Deploy GREEN environment
+        run: |
+          ssh ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }} "
+            cd /opt/blue-green-app &&
+            chmod +x scripts/*.sh &&
+            ./scripts/deploy_green.sh
+          "
+
+      - name: Health check
+        run: |
+          ssh ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }} "
+            curl -f http://localhost:8081 || exit 1
+          "
+
+      - name: Switch traffic to GREEN
+        run: |
+          ssh ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }} "
+            cd /opt/blue-green-app &&
+            ./scripts/switch_traffic.sh
+          "
+
+      - name: Cleanup BLUE environment
+        run: |
+          ssh ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }} "
+            cd /opt/blue-green-app &&
+            ./scripts/rollback.sh blue
+          "
