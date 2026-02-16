@@ -1,0 +1,5 @@
+- name: Set kubeconfig
+  run: |
+    mkdir -p ~/.kube
+    echo "${{ secrets.KUBECONFIG }}" > ~/.kube/config
+    chmod 600 ~/.kube/config
