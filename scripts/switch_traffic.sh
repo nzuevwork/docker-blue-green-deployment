@@ -7,13 +7,21 @@ if [[ "$TARGET" != "blue" && "$TARGET" != "green" ]]; then
   exit 1
 fi
 
-# copy template -> real .conf (nginx reads only .conf)
-cp -f "nginx/${TARGET}.conf.tpl" "nginx/${TARGET}.conf"
+BACKEND="app-${TARGET}"
 
-# switch active symlink
-ln -sf "${TARGET}.conf" nginx/active.conf
+# ВАЖНО: имя сервиса nginx в compose может быть nginx или nginx-proxy.
+# Сначала пробуем nginx, если не найден — пробуем nginx-proxy.
+SERVICE="nginx"
+if ! docker compose ps --services | grep -qx "$SERVICE"; then
+  SERVICE="nginx-proxy"
+fi
 
-docker exec nginx-proxy nginx -t
-docker exec nginx-proxy nginx -s reload
+echo "Switching to: ${BACKEND} (service: ${SERVICE})"
 
-echo "Traffic switched to: ${TARGET}"
+# Пересоздаём nginx сервис с нужной переменной окружения
+BACKEND="${BACKEND}" docker compose up -d --force-recreate "$SERVICE"
+
+# Проверка
+docker compose ps
+curl -fsS http://localhost/__health >/dev/null && echo "health: ok"
+curl -fsS http://localhost | grep -E 'BLUE|GREEN' -n || true
