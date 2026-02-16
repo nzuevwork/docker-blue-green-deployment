@@ -8,4 +8,4 @@ services:
 
 networks:
   app_net:
-    external: true
+    name: app_net
