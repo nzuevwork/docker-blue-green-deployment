@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# default active = blue (created on server as symlink)
+# create active.conf if missing
 if [[ ! -e nginx/active.conf ]]; then
   ln -sf blue.conf nginx/active.conf
 fi
