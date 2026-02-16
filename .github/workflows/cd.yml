@@ -19,25 +19,12 @@ jobs:
           port: ${{ secrets.SSH_PORT }}
           script: |
             set -euo pipefail
-
-            # папка на сервере, где лежит репозиторий
             APP_DIR="${{ secrets.APP_DIR }}"
             cd "$APP_DIR"
-
             git fetch --all
             git reset --hard origin/main
-
             chmod +x scripts/*.sh
-
             ./scripts/init.sh
-
-            # деплоим green
             ./scripts/deploy_green.sh
-
-            # проверяем, что green реально отвечает
             ./scripts/health_check.sh green
-
-            # переключаем трафик на green
             ./scripts/switch_traffic.sh green
-
-            echo "DONE: traffic -> green"
