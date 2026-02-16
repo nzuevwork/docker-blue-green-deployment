@@ -7,6 +7,10 @@ if [[ "$TARGET" != "blue" && "$TARGET" != "green" ]]; then
   exit 1
 fi
 
+# copy template -> real .conf (nginx reads only .conf)
+cp -f "nginx/${TARGET}.conf.tpl" "nginx/${TARGET}.conf"
+
+# switch active symlink
 ln -sf "${TARGET}.conf" nginx/active.conf
 
 docker exec nginx-proxy nginx -t
