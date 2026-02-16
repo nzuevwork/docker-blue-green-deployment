@@ -118,3 +118,8 @@ After this, every push to `main` automatically deploys the application.
 Application updates are deployed automatically without stopping the service.
 
 This project simulates a real production deployment workflow used in modern DevOps environments.
+
+## Контакты
+
+GitHub: [https://github.com/nzuevwork](https://github.com/nzuevwork)
+Email: [n.zuev.work@gmail.com](mailto:n.zuev.work@gmail.com)
