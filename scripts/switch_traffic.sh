@@ -14,14 +14,12 @@ CONTAINER="nginx-proxy"
 CONF="/etc/nginx/conf.d/default.conf"
 
 echo "Before (inside container):"
-docker exec "$CONTAINER" sh -lc "grep -n 'set \\$backend' $CONF || true"
+docker exec "$CONTAINER" sh -lc 'grep -n "set \$backend" '"$CONF"' || true'
 
-# Replace inside container
-docker exec "$CONTAINER" sh -lc \
-  "sed -i -E 's@(^[[:space:]]*set[[:space:]]+\\$backend[[:space:]]+\\\")app-(blue|green)(\\\";)@\\1app-${TARGET}\\3@' $CONF"
+docker exec "$CONTAINER" sh -lc 'sed -i -E '"'"'s@(^[[:space:]]*set[[:space:]]+\$backend[[:space:]]+\")app-(blue|green)(\";)@\1app-'"$TARGET"'\3@'"'"' '"$CONF"
 
 echo "After (inside container):"
-docker exec "$CONTAINER" sh -lc "grep -n 'set \\$backend' $CONF || true"
+docker exec "$CONTAINER" sh -lc 'grep -n "set \$backend" '"$CONF"' || true'
 
 docker exec "$CONTAINER" nginx -t
 docker exec "$CONTAINER" nginx -s reload
