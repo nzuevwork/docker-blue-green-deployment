@@ -8,13 +8,11 @@ if [[ "$TARGET" != "blue" && "$TARGET" != "green" ]]; then
 fi
 
 CONF="nginx/default.conf"
-
 if [[ ! -f "$CONF" ]]; then
   echo "Config not found: $CONF"
   exit 1
 fi
 
-# меняем только строку server app-*:80;
 sed -i -E "s/server app-(blue|green):80;/server app-${TARGET}:80;/" "$CONF"
 
 docker compose -f docker-compose.nginx.yml up -d
