@@ -1,24 +1,30 @@
-# GitHub Actions CI/CD
+## What this project demonstrates
 
-This repository uses GitHub Actions to implement a Blue-Green deployment strategy.
+This project implements a **zero-downtime deployment strategy (Blue-Green Deployment)** using Docker and Nginx reverse proxy.
 
-## CI Pipeline
-- Validates Dockerfile
-- Validates docker-compose configurations
-- Runs on pull requests and pushes
+The system maintains two identical application environments:
 
-## CD Pipeline
-- Triggers on push to `main`
-- Deploys GREEN environment first
-- Runs health checks
-- Switches traffic via Nginx
-- Supports rollback without downtime
+* BLUE (active)
+* GREEN (standby)
 
-## Security
-- No credentials stored in repository
-- SSH access via GitHub Secrets
-- No root access required
+A new version is deployed to the inactive environment, verified via health-check, and only then traffic is switched.
 
-## Deployment Strategy
-Blue-Green deployment ensures zero downtime and fast rollback.
+This simulates real production release processes used in companies to avoid service outages during deployments.
 
+Key features:
+
+* zero downtime releases
+* health-checked deployments
+* instant rollback
+* traffic switching via reverse proxy
+* release safety verification
+## Architecture
+
+User → Nginx reverse proxy → active environment (blue or green)
+
+Deployment flow:
+
+1. New version is deployed to inactive environment
+2. Health check is executed
+3. If healthy → traffic switch
+4. If failed → rollback to previous version
