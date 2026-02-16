@@ -1,3 +1,5 @@
+cd ~/docker-blue-green-deployment
+
 cat > scripts/switch_traffic.sh <<'EOF'
 #!/usr/bin/env bash
 set -euo pipefail
@@ -16,7 +18,7 @@ docker exec "$CONTAINER" sh -lc "grep -n 'set \\$backend' $CONF || true"
 
 # Replace inside container
 docker exec "$CONTAINER" sh -lc \
-  "sed -i -E 's@(^[[:space:]]*set[[:space:]]+\\$backend[[:space:]]+\")app-(blue|green)(\";)@\\1app-${TARGET}\\3@' $CONF"
+  "sed -i -E 's@(^[[:space:]]*set[[:space:]]+\\$backend[[:space:]]+\\\")app-(blue|green)(\\\";)@\\1app-${TARGET}\\3@' $CONF"
 
 echo "After (inside container):"
 docker exec "$CONTAINER" sh -lc "grep -n 'set \\$backend' $CONF || true"
