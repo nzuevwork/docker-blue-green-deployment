@@ -1,5 +1,3 @@
-cd ~/docker-blue-green-deployment
-
 cat > scripts/switch_traffic.sh <<'EOF'
 #!/usr/bin/env bash
 set -euo pipefail
@@ -10,31 +8,21 @@ if [[ "$TARGET" != "blue" && "$TARGET" != "green" ]]; then
   exit 1
 fi
 
-CONF="nginx/default.conf"
-if [[ ! -f "$CONF" ]]; then
-  echo "Config not found: $CONF"
-  exit 1
-fi
+CONTAINER="nginx-proxy"
+CONF="/etc/nginx/conf.d/default.conf"
 
-echo "Before:"
-grep -n 'set $backend' "$CONF" || true
+echo "Before (inside container):"
+docker exec "$CONTAINER" sh -lc "grep -n 'set \\$backend' $CONF || true"
 
-# Replace the exact directive (handles both spaces and quotes)
-sed -i -E "s@set[[:space:]]+\\\$backend[[:space:]]+\"app-(blue|green)\";@set \\\$backend \"app-${TARGET}\";@g" "$CONF"
+# Replace inside container
+docker exec "$CONTAINER" sh -lc \
+  "sed -i -E 's@(^[[:space:]]*set[[:space:]]+\\$backend[[:space:]]+\")app-(blue|green)(\";)@\\1app-${TARGET}\\3@' $CONF"
 
-echo "After:"
-grep -n 'set $backend' "$CONF" || true
+echo "After (inside container):"
+docker exec "$CONTAINER" sh -lc "grep -n 'set \\$backend' $CONF || true"
 
-# Fail fast if replacement didn't take effect
-if ! grep -q "set \$backend \"app-${TARGET}\";" "$CONF"; then
-  echo "ERROR: switch did not apply. Current line is:"
-  grep -n 'set $backend' "$CONF" || true
-  exit 2
-fi
-
-docker compose -f docker-compose.nginx.yml up -d
-docker exec nginx-proxy nginx -t
-docker exec nginx-proxy nginx -s reload
+docker exec "$CONTAINER" nginx -t
+docker exec "$CONTAINER" nginx -s reload
 
 echo "Traffic switched to: ${TARGET}"
 EOF
