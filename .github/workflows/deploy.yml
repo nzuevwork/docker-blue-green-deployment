@@ -1,0 +1,44 @@
+name: BlueGreen Deploy
+
+on:
+  push:
+    branches: ["main"]
+
+jobs:
+  deploy:
+    runs-on: self-hosted
+
+    defaults:
+      run:
+        shell: bash
+
+    steps:
+      - name: Deploy (compose)
+        run: |
+          set -euo pipefail
+
+          cd ~/Blue-Greeen
+
+          # Runner никогда не должен мерджить
+          git fetch origin
+          git reset --hard origin/main
+          git clean -fd
+
+          export COMPOSE_PROJECT_NAME=docker-blue-green-deployment
+          chmod +x scripts/switch_traffic.sh
+          sed -i 's/\r$//' scripts/switch_traffic.sh
+          ACTIVE=$(grep '^BACKEND=' .env 2>/dev/null | cut -d= -f2 || true)
+
+          if [[ "$ACTIVE" == "app-blue" ]]; then
+            echo "Deploying GREEN..."
+            docker compose up -d --build app-green
+            ./scripts/switch_traffic.sh green
+          else
+            echo "Deploying BLUE..."
+            docker compose up -d --build app-blue
+            
+            ./scripts/switch_traffic.sh blue
+          fi
+
+          # smoke test
+          curl -fsS http://localhost/ >/dev/null

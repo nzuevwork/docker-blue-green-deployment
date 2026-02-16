@@ -1,0 +1,24 @@
+name: CI
+
+on:
+  workflow_dispatch:
+  pull_request:
+
+jobs:
+  validate-and-build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Validate compose files
+        run: |
+          docker compose -f docker-compose.nginx.yml config >/dev/null
+          docker compose -f docker-compose.blue.yml  config >/dev/null
+          docker compose -f docker-compose.green.yml config >/dev/null
+
+      - name: Build blue
+        run: docker build -t myapp:blue ./app/v1
+
+      - name: Build green
+        run: docker build -t myapp:green ./app/v2
+
