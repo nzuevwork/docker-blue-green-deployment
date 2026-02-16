@@ -5,6 +5,7 @@ services:
     container_name: app-blue
     networks:
       - app_net
+    restart: unless-stopped
 
 networks:
   app_net:
