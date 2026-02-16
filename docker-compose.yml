@@ -1,6 +1,8 @@
 services:
   nginx:
     image: nginx:alpine
+    environment:
+      - BACKEND=${BACKEND:-app-blue}
     container_name: nginx-proxy
     ports:
       - "80:80"
@@ -33,5 +35,4 @@ networks:
   app_net:
     driver: bridge
 
-environment:
-  - BACKEND=${BACKEND:-app-blue}
+
