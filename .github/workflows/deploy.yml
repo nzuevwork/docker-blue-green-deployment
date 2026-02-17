@@ -13,32 +13,57 @@ jobs:
         shell: bash
 
     steps:
-      - name: Deploy (compose)
+
+      # 1. GitHub сам клонирует код
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # 2. Деплой
+      - name: Blue/Green deployment
         run: |
           set -euo pipefail
 
           cd ~/Blue-Greeen
 
-          # Runner никогда не должен мерджить
+          # Обновляем код на сервере
           git fetch origin
           git reset --hard origin/main
-          git clean -fd
+          git clean -fd -e .env
 
           export COMPOSE_PROJECT_NAME=docker-blue-green-deployment
+
+          # фикс CRLF и прав
           chmod +x scripts/switch_traffic.sh
           sed -i 's/\r$//' scripts/switch_traffic.sh
+
+          # определяем активную сторону
           ACTIVE=$(grep '^BACKEND=' .env 2>/dev/null | cut -d= -f2 || true)
 
           if [[ "$ACTIVE" == "app-blue" ]]; then
-            echo "Deploying GREEN..."
-            docker compose up -d --build app-green
-            ./scripts/switch_traffic.sh green
+            TARGET="green"
+            SERVICE="app-green"
           else
-            echo "Deploying BLUE..."
-            docker compose up -d --build app-blue
-            
-            ./scripts/switch_traffic.sh blue
+            TARGET="blue"
+            SERVICE="app-blue"
           fi
 
-          # smoke test
-          curl -fsS http://localhost/ >/dev/null
+          echo "Current active: ${ACTIVE:-none}"
+          echo "Deploy target: $TARGET"
+
+          # 1) билдим НЕактивную сторону
+          docker compose build --pull $SERVICE
+
+          # 2) поднимаем её
+          docker compose up -d $SERVICE
+
+          # 3) проверяем контейнер жив ли
+          sleep 3
+          docker compose ps
+
+          # 4) переключаем трафик (если не ок → rollback → exit 1)
+          ./scripts/switch_traffic.sh $TARGET
+
+      # 3. Финальный smoke (если упадёт — job FAIL)
+      - name: Final smoke test
+        run: |
+          curl -fsS http://localhost/
