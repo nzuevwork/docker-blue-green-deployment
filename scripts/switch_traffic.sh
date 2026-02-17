@@ -11,9 +11,6 @@ BACKEND="app-${TARGET}"
 
 # Определяем имя nginx сервиса в compose
 SERVICE="nginx"
-if ! docker compose ps --services | grep -qx "$SERVICE"; then
-  SERVICE="nginx-proxy"
-fi
 
 echo "Switching to: ${BACKEND} (service: ${SERVICE})"
 
